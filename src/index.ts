@@ -6,6 +6,7 @@ import {
   ListToolsRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js';
 import dotenv from 'dotenv';
+import { join } from 'path';
 import { RAGEngine } from './rag/engine.js';
 import { ProjectDetector } from './project/detector.js';
 import { getStylingGuideTool } from './tools/styling.js';
@@ -13,8 +14,10 @@ import { getComponentTemplateTool } from './tools/template.js';
 import { validateCodeStyleTool } from './tools/validator.js';
 import { logger } from './utils/logger.js';
 
-// Load environment variables
-dotenv.config();
+// Load environment variables from the project root
+// Use PROJECT_ROOT env var if available, otherwise use hardcoded path
+const projectRoot = process.env.PROJECT_ROOT || '/Users/naron/Desktop/Personal/frontend-rag';
+dotenv.config({ path: join(projectRoot, '.env') });
 
 // Initialize components
 const ragEngine = new RAGEngine();
@@ -149,12 +152,22 @@ async function initializeServer() {
     await ragEngine.initialize();
     logger.info('RAG engine initialized');
     
-    // Auto-detect current project if enabled
-    if (process.env.AUTO_DETECT === 'true') {
-      const project = await projectDetector.detectCurrentProject();
-      if (project) {
-        logger.info(`Auto-detected project: ${project.name}`);
-        await ragEngine.loadProject(project);
+    // Always load the default project on startup
+    const defaultProjectPath = process.env.PROJECT_ROOT || '/Users/naron/Desktop/Personal/frontend-rag';
+    try {
+      const project = await projectDetector.loadProject(defaultProjectPath);
+      await ragEngine.loadProject(project);
+      logger.info(`Loaded default project: ${project.name}`);
+    } catch (error) {
+      logger.warn('Could not load default project:', error);
+      
+      // Fallback: Auto-detect if enabled
+      if (process.env.AUTO_DETECT === 'true') {
+        const project = await projectDetector.detectCurrentProject();
+        if (project) {
+          logger.info(`Auto-detected project: ${project.name}`);
+          await ragEngine.loadProject(project);
+        }
       }
     }
     

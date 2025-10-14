@@ -72,8 +72,16 @@ export class RAGEngine {
   async indexGuidelines(project: ProjectConfig, force: boolean = false): Promise<IndexResult> {
     const collectionName = project.vectorDbCollection || `mcp_frontend_${project.id}`;
     
-    // Check if already indexed
-    if (!force) {
+    // If force, delete and recreate collection
+    if (force) {
+      try {
+        await this.chromaClient.deleteCollection({ name: collectionName });
+        logger.info(`Deleted existing collection: ${collectionName}`);
+      } catch (error) {
+        // Collection doesn't exist, that's fine
+      }
+    } else {
+      // Check if already indexed
       const collection = this.collections.get('project');
       if (collection) {
         const count = await collection.count();
@@ -183,12 +191,23 @@ export class RAGEngine {
   }
 
   async getTemplate(templateType: string): Promise<string | null> {
+    // Search for template in RAG with specific metadata filter
     const results = await this.search(`${templateType} template`, {
       context: 'template',
       maxResults: 1,
     });
     
-    return results.length > 0 ? results[0].content : null;
+    // Check if we found a matching template
+    if (results.length > 0) {
+      const result = results[0];
+      // Verify it's the correct template type
+      if (result.metadata.componentType === templateType || 
+          result.metadata.type === 'template') {
+        return result.content;
+      }
+    }
+    
+    return null;
   }
 
   async validateStyle(code: string, fileType: string): Promise<{

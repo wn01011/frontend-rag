@@ -69,7 +69,7 @@ app.get('/api/search', async (req, res) => {
     
     try {
       const collection = await client.getCollection({
-        name: 'frontend_guidelines_v2',
+        name: 'mcp_frontend_default',
         embeddingFunction: embedder
       });
       
@@ -145,40 +145,35 @@ app.get('/api/search', async (req, res) => {
 // API endpoint for collections
 app.get('/api/collections', async (req, res) => {
   try {
-    const { ChromaClient } = require('chromadb');
+    const { ChromaClient, DefaultEmbeddingFunction } = require('chromadb');
     const client = new ChromaClient({
       path: 'http://localhost:8000'
     });
     
-    // 알려진 컬렉션들의 정보
-    const knownCollections = [
-      { name: 'frontend_guidelines_v2', totalDocuments: 47 },
-      { name: 'test_rag_collection', totalDocuments: 4 },
-      { name: 'mcp_frontend_test', totalDocuments: 3 }
-    ];
+    // 실제로 존재하는 모든 컬렉션을 가져옴
+    const allCollections = await client.listCollections();
     
     let totalDocs = 0;
     const collectionsInfo = [];
+    const embedder = new DefaultEmbeddingFunction();
     
-    for (const col of knownCollections) {
+    // allCollections는 문자열 배열임 (예: ["mcp_frontend_default"])
+    for (const collectionName of allCollections) {
       try {
-        const { DefaultEmbeddingFunction } = require('chromadb');
-        const embedder = new DefaultEmbeddingFunction();
-        
         const collection = await client.getCollection({
-          name: col.name,
+          name: collectionName,
           embeddingFunction: embedder
         });
         
         const count = await collection.count();
         collectionsInfo.push({
-          name: col.name,
+          name: collectionName,
           totalDocuments: count
         });
         totalDocs += count;
       } catch (e) {
         // 컬렉션이 없으면 스킵
-        console.log(`Collection ${col.name} not found`);
+        console.log(`Collection ${collectionName} error:`, e.message);
       }
     }
     
