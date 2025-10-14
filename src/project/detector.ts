@@ -70,6 +70,7 @@ export class ProjectDetector {
       const config = ProjectConfigSchema.parse({
         ...defaultProjectConfig,
         ...rawConfig,
+        rootPath: projectPath, // Set the project root path
       });
       
       // Store in cache

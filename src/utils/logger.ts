@@ -45,17 +45,8 @@ class Logger {
     if (level <= this.logLevel) {
       const formattedMessage = this.formatMessage(levelStr, message, ...args);
       
-      // Console output
-      switch (level) {
-        case LogLevel.ERROR:
-          console.error(formattedMessage);
-          break;
-        case LogLevel.WARN:
-          console.warn(formattedMessage);
-          break;
-        default:
-          console.log(formattedMessage);
-      }
+      // CRITICAL: Always use stderr for MCP servers (stdout is reserved for protocol)
+      console.error(formattedMessage);
       
       // File output in production
       if (this.logFile) {

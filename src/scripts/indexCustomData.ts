@@ -109,7 +109,7 @@ async function indexCustomData() {
   }
 
   // 예제 3: 여러 텍스트 파일 읽기
-  const textFiles = [
+  const textFiles: string[] = [
     // '/path/to/file1.txt',
     // '/path/to/file2.txt'
   ];
@@ -127,7 +127,7 @@ async function indexCustomData() {
         }
       });
     } catch (e) {
-      console.log(`Skipping ${filePath}: ${e.message}`);
+      console.log(`Skipping ${filePath}: ${e instanceof Error ? e.message : String(e)}`);
     }
   }
 

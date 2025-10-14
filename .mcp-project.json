@@ -1,0 +1,22 @@
+{
+  "id": "frontend-rag",
+  "name": "frontend-rag",
+  "version": "1.0.0",
+  "vectorDbCollection": "mcp_frontend_default",
+  "priority": 1.0,
+  "overrides": {
+    "styling": "css-modules",
+    "componentStructure": "atomic",
+    "namingConvention": "PascalCase"
+  },
+  "rules": {
+    "enforceStrict": true,
+    "allowExceptions": [],
+    "customRules": []
+  },
+  "guidelines": {
+    "path": "./guidelines/default",
+    "autoIndex": true,
+    "updateFrequency": "manual"
+  }
+}

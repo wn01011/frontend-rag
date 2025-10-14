@@ -28,7 +28,7 @@ async function testChromaDB() {
     if (collections.length === 0) {
       console.log('   No collections found.');
     } else {
-      collections.forEach(col => {
+      collections.forEach((col: any) => {
         console.log(`   - ${col.name}`);
       });
     }
@@ -106,7 +106,7 @@ async function testChromaDB() {
     // List all collections again
     console.log('\n📚 All Collections After Test:');
     const finalCollections = await client.listCollections();
-    finalCollections.forEach(col => {
+    finalCollections.forEach((col: any) => {
       console.log(`   - ${col.name}`);
     });
     

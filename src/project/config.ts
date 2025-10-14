@@ -5,6 +5,7 @@ export const ProjectConfigSchema = z.object({
   id: z.string(),
   name: z.string(),
   version: z.string().default('1.0.0'),
+  rootPath: z.string().optional(), // Project root directory path
   vectorDbCollection: z.string().optional(),
   priority: z.number().default(1.0),
   overrides: z.object({

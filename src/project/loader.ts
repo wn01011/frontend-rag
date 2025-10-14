@@ -27,7 +27,7 @@ export class DocumentLoader {
   async loadProjectGuidelines(project: ProjectConfig): Promise<Document[]> {
     const documents: Document[] = [];
     const guidelinePath = project.guidelines?.path || './.mcp-guidelines';
-    const projectPath = process.cwd(); // Should be passed as parameter in production
+    const projectPath = project.rootPath || process.cwd();
     const fullPath = join(projectPath, guidelinePath);
     
     try {
@@ -114,6 +114,8 @@ export class DocumentLoader {
             category: data.category || this.inferCategory(filePath),
             title: data.title || basename(filePath, ext),
             project: project?.name,
+            // Convert arrays to strings for ChromaDB
+            tags: Array.isArray(data.tags) ? data.tags.join(',') : data.tags,
           },
         };
       } else if (ext === '.json') {

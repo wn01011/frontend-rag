@@ -23,15 +23,12 @@ export class SearchService {
     options: SearchOptions = {}
   ): Promise<SearchResult[]> {
     const maxResults = options.maxResults || 5;
-    const threshold = options.threshold || 0.7;
+    const threshold = options.threshold || 0.0; // ChromaDB distances, accept all results
     
     try {
-      // Generate query embedding
-      const queryEmbedding = await this.embeddingService.generateEmbedding(query);
-      
-      // Search in collection
+      // Search in collection using queryTexts (ChromaDB will auto-generate embeddings)
       const results = await collection.query({
-        queryEmbeddings: [queryEmbedding],
+        queryTexts: [query],
         nResults: maxResults,
         where: options.filter,
       });
@@ -42,7 +39,9 @@ export class SearchService {
       if (results.documents && results.documents[0]) {
         for (let i = 0; i < results.documents[0].length; i++) {
           const distance = results.distances?.[0]?.[i] || 0;
-          const score = 1 - distance; // Convert distance to similarity score
+          // ChromaDB uses L2 distance, convert to similarity score (lower distance = higher similarity)
+          // Since distances can be > 1, we normalize differently
+          const score = Math.max(0, 2 - distance) / 2; // Maps distance to 0-1 range
           
           if (score >= threshold) {
             searchResults.push({

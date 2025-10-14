@@ -97,7 +97,6 @@ export class RAGEngine {
     
     // Prepare documents for indexing
     const ids: string[] = [];
-    const embeddings: number[][] = [];
     const metadatas: Record<string, any>[] = [];
     const contents: string[] = [];
     
@@ -105,16 +104,11 @@ export class RAGEngine {
       ids.push(doc.id);
       contents.push(doc.content);
       metadatas.push(doc.metadata);
-      
-      // Generate embedding
-      const embedding = await this.embeddingService.generateEmbedding(doc.content);
-      embeddings.push(embedding);
     }
     
-    // Add to collection
+    // Add to collection (ChromaDB will auto-generate embeddings)
     await collection.add({
       ids,
-      embeddings,
       metadatas,
       documents: contents,
     });

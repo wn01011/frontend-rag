@@ -143,7 +143,7 @@ async function fixAndIndex() {
         });
       }
     } catch (e) {
-      console.log(`  ❌ Query error: ${e.message}`);
+      console.log(`  ❌ Query error: ${e instanceof Error ? e.message : String(e)}`);
     }
     console.log();
   }
