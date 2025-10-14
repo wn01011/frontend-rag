@@ -1,0 +1,70 @@
+{
+  "id": "my-ecommerce-project",
+  "name": "E-Commerce Platform",
+  "version": "1.0.0",
+  "vectorDbCollection": "ecommerce_project_collection",
+  "priority": 1.5,
+  "overrides": {
+    "styling": "tailwind",
+    "componentStructure": "atomic",
+    "namingConvention": "PascalCase"
+  },
+  "designSystem": {
+    "colors": {
+      "primary": "#1a73e8",
+      "secondary": "#f8f9fa",
+      "error": "#dc3545",
+      "success": "#28a745"
+    },
+    "spacing": {
+      "unit": 8,
+      "scale": [0, 4, 8, 16, 24, 32, 48, 64]
+    },
+    "typography": {
+      "fontFamily": "Inter, system-ui, sans-serif",
+      "sizes": {
+        "xs": "12px",
+        "sm": "14px",
+        "base": "16px",
+        "lg": "18px",
+        "xl": "24px",
+        "2xl": "32px"
+      }
+    },
+    "components": {
+      "button": {
+        "borderRadius": "8px",
+        "padding": "12px 24px",
+        "variants": ["primary", "secondary", "danger", "ghost"]
+      },
+      "card": {
+        "borderRadius": "16px",
+        "boxShadow": "0 2px 8px rgba(0,0,0,0.08)",
+        "padding": "24px"
+      }
+    }
+  },
+  "folderStructure": {
+    "src": {
+      "components": {
+        "atoms": ["Button", "Input", "Icon", "Text"],
+        "molecules": ["SearchBar", "Card", "FormField"],
+        "organisms": ["Header", "ProductList", "CheckoutForm"],
+        "templates": ["PageLayout", "DashboardLayout"],
+        "pages": ["HomePage", "ProductPage", "CheckoutPage"]
+      },
+      "styles": {
+        "global": ["reset.css", "variables.css"],
+        "themes": ["light.css", "dark.css"]
+      },
+      "hooks": ["useAuth", "useCart", "useProduct"],
+      "utils": ["api", "formatter", "validator"],
+      "types": ["product.ts", "user.ts", "order.ts"]
+    }
+  },
+  "guidelines": {
+    "path": "./.mcp-guidelines",
+    "autoIndex": true,
+    "updateFrequency": "on-save"
+  }
+}

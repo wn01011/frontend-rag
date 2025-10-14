@@ -1,0 +1,833 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MCP Frontend RAG Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        header {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            color: #333;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            color: #666;
+            font-size: 1.2em;
+        }
+        
+        .status-bar {
+            display: flex;
+            gap: 20px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 15px;
+            background: #f7f7f7;
+            border-radius: 8px;
+        }
+        
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+        
+        .status-dot.online {
+            background: #4ade80;
+        }
+        
+        .status-dot.offline {
+            background: #f87171;
+        }
+        
+        .status-dot.warning {
+            background: #fbbf24;
+        }
+        
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.5;
+            }
+        }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+        }
+        
+        .card h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .icon {
+            width: 24px;
+            height: 24px;
+        }
+        
+        .test-section {
+            margin-top: 20px;
+        }
+        
+        .test-input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 16px;
+            margin-bottom: 10px;
+            transition: border-color 0.3s;
+        }
+        
+        .test-input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+        
+        .results {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f7f7f7;
+            border-radius: 8px;
+            min-height: 100px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .results:empty::after {
+            content: 'Results will appear here...';
+            color: #999;
+        }
+        
+        .result-item {
+            padding: 10px;
+            margin-bottom: 10px;
+            background: white;
+            border-radius: 6px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .result-score {
+            color: #667eea;
+            font-weight: bold;
+            font-size: 0.9em;
+        }
+        
+        .result-content {
+            margin-top: 5px;
+            color: #333;
+        }
+        
+        .result-metadata {
+            margin-top: 5px;
+            font-size: 0.85em;
+            color: #666;
+        }
+        
+        .collection-list {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .collection-item {
+            padding: 12px;
+            margin-bottom: 8px;
+            background: #f7f7f7;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .collection-name {
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .collection-count {
+            background: #667eea;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+        }
+        
+        .guideline-item {
+            padding: 10px;
+            margin-bottom: 8px;
+            background: #f7f7f7;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        
+        .guideline-item:hover {
+            background: #e5e7eb;
+        }
+        
+        .guideline-title {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 4px;
+        }
+        
+        .guideline-path {
+            font-size: 0.85em;
+            color: #666;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+        
+        .error {
+            background: #fee;
+            color: #c00;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+        
+        /* 모달 스타일 */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+        }
+        
+        .modal-content {
+            background-color: white;
+            margin: 5% auto;
+            padding: 0;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 1000px;
+            max-height: 80vh;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        
+        .modal-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .modal-title {
+            font-size: 1.5em;
+            font-weight: 600;
+        }
+        
+        .close {
+            color: white;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            background: none;
+            border: none;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .close:hover {
+            opacity: 0.7;
+        }
+        
+        .modal-body {
+            padding: 30px;
+            max-height: 60vh;
+            overflow-y: auto;
+        }
+        
+        .document-item {
+            background: #f7f7f7;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 15px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .document-title {
+            font-size: 1.2em;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        .document-meta {
+            font-size: 0.9em;
+            color: #666;
+            margin-bottom: 15px;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .document-content {
+            color: #333;
+            line-height: 1.6;
+            max-height: 300px;
+            overflow-y: auto;
+            overflow-x: auto;
+            background: white;
+            padding: 15px;
+            border-radius: 6px;
+            border: 1px solid #e5e7eb;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .collection-item {
+            padding: 12px;
+            margin-bottom: 8px;
+            background: #f7f7f7;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .collection-item:hover {
+            background: #e5e7eb;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        
+        /* Modal styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.5);
+        }
+        
+        .modal-content {
+            background-color: #fefefe;
+            margin: 2% auto;
+            padding: 0;
+            width: 90%;
+            max-width: 1200px;
+            max-height: 90vh;
+            border-radius: 15px;
+            box-shadow: 0 25px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        
+        .modal-header {
+            padding: 20px 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .modal-title {
+            margin: 0;
+            font-size: 1.8em;
+            color: white;
+        }
+        
+        .modal-body {
+            padding: 30px;
+            max-height: calc(90vh - 80px);
+            overflow-y: auto;
+            background: white;
+        }
+        
+        .close {
+            color: white;
+            font-size: 32px;
+            font-weight: bold;
+            cursor: pointer;
+            background: none;
+            border: none;
+            padding: 0;
+            width: 35px;
+            height: 35px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.2s;
+        }
+        
+        .close:hover {
+            transform: scale(1.2);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🚀 MCP Frontend RAG Dashboard</h1>
+            <p class="subtitle">Monitor and test your RAG server</p>
+            
+            <div class="status-bar">
+                <div class="status-item">
+                    <span class="status-dot offline" id="chromaStatus"></span>
+                    <span>ChromaDB: <span id="chromaStatusText">Checking...</span></span>
+                </div>
+                <div class="status-item">
+                    <span class="status-dot offline" id="apiStatus"></span>
+                    <span>OpenAI API: <span id="apiStatusText">Not configured</span></span>
+                </div>
+                <div class="status-item">
+                    <span>Collections: <span id="collectionCount">0</span></span>
+                </div>
+                <div class="status-item">
+                    <span>Documents: <span id="documentCount">0</span></span>
+                </div>
+            </div>
+        </header>
+        
+        <div class="grid">
+            <div class="card">
+                <h2>
+                    <span>🔍</span>
+                    Search Test
+                </h2>
+                <div class="test-section">
+                    <input type="text" class="test-input" id="searchQuery" placeholder="Enter search query (e.g., CSS modules best practices)">
+                    <button class="btn" onclick="testSearch()">Search</button>
+                    <div class="results" id="searchResults"></div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h2>
+                    <span>📚</span>
+                    Collections
+                </h2>
+                <ul class="collection-list" id="collectionList">
+                    <li class="loading">Loading collections...</li>
+                </ul>
+            </div>
+            
+            <div class="card">
+                <h2>
+                    <span>📄</span>
+                    Guidelines
+                </h2>
+                <div id="guidelinesList">
+                    <div class="loading">Loading guidelines...</div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h2>
+                    <span>⚙️</span>
+                    Configuration
+                </h2>
+                <div class="test-section">
+                    <p style="margin-bottom: 10px; color: #666;">Current Settings:</p>
+                    <div style="background: #f7f7f7; padding: 15px; border-radius: 8px; font-family: monospace; font-size: 14px;">
+                        <div>CHROMA_DB_HOST: <span id="configHost">localhost</span></div>
+                        <div>CHROMA_DB_PORT: <span id="configPort">8000</span></div>
+                        <div>EMBEDDING_MODEL: <span id="configModel">text-embedding-3-small</span></div>
+                        <div>MAX_SEARCH_RESULTS: <span id="configMaxResults">5</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <h2>
+                <span>🧪</span>
+                Test MCP Tools
+            </h2>
+            <div class="test-section">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin-bottom: 20px;">
+                    <button class="btn" onclick="testTool('get_styling_guide')">Test Styling Guide</button>
+                    <button class="btn" onclick="testTool('get_component_template')">Test Component Template</button>
+                    <button class="btn" onclick="testTool('validate_code_style')">Test Code Validator</button>
+                    <button class="btn" onclick="testTool('index_guidelines')">Test Index Guidelines</button>
+                </div>
+                <div class="results" id="toolResults"></div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Check ChromaDB status
+        async function checkChromaStatus() {
+            try {
+                const response = await fetch('/api/status');
+                const status = await response.json();
+                
+                if (status.chromadb === 'online') {
+                    document.getElementById('chromaStatus').className = 'status-dot online';
+                    document.getElementById('chromaStatusText').textContent = 'Connected';
+                    document.getElementById('collectionCount').textContent = status.collections || 0;
+                    loadCollections();
+                } else {
+                    document.getElementById('chromaStatus').className = 'status-dot offline';
+                    document.getElementById('chromaStatusText').textContent = 'Offline';
+                    document.getElementById('collectionList').innerHTML = '<li class="error">ChromaDB is not running. Start it with: docker-compose up -d</li>';
+                }
+                
+                // Update OpenAI status
+                if (status.openai === 'configured') {
+                    document.getElementById('apiStatus').className = 'status-dot online';
+                    document.getElementById('apiStatusText').textContent = 'Configured';
+                } else {
+                    document.getElementById('apiStatus').className = 'status-dot offline';
+                    document.getElementById('apiStatusText').textContent = 'Not configured';
+                }
+                
+                // Show environment info
+                if (status.env) {
+                    document.getElementById('configHost').textContent = status.env.chromaHost;
+                    document.getElementById('configPort').textContent = status.env.chromaPort;
+                }
+            } catch (error) {
+                console.error('Status check error:', error);
+                document.getElementById('chromaStatus').className = 'status-dot offline';
+                document.getElementById('chromaStatusText').textContent = 'Error';
+                document.getElementById('collectionList').innerHTML = '<li class="error">Cannot connect to server</li>';
+            }
+        }
+        
+        // Load collections
+        async function loadCollections() {
+            try {
+                const response = await fetch('/api/collections');
+                const data = await response.json();
+                
+                const collectionList = document.getElementById('collectionList');
+                
+                if (data.success && data.collections && data.collections.length > 0) {
+                    collectionList.innerHTML = data.collections.map(collection => `
+                        <li class="collection-item" onclick="showCollectionDetails('${collection.name}')">
+                            <span class="collection-name">${collection.name}</span>
+                            <span class="collection-count">${collection.totalDocuments} docs</span>
+                        </li>
+                    `).join('');
+                    
+                    // 문서 수 업데이트
+                    document.getElementById('documentCount').textContent = data.totalDocuments;
+                } else if (data.error) {
+                    collectionList.innerHTML = `<li class="error">Error: ${data.error}</li>`;
+                } else {
+                    collectionList.innerHTML = '<li class="error">No collections found</li>';
+                }
+            } catch (error) {
+                console.error('Error loading collections:', error);
+                document.getElementById('collectionList').innerHTML = '<li class="error">Error loading collections</li>';
+            }
+        }
+        
+        // Show collection details in modal
+        async function showCollectionDetails(collectionName) {
+            const modal = document.getElementById('collectionModal');
+            const modalTitle = document.getElementById('modalTitle');
+            const modalBody = document.getElementById('modalBody');
+            
+            // 모달 열기
+            modal.style.display = 'block';
+            modalTitle.textContent = `Collection: ${collectionName}`;
+            modalBody.innerHTML = '<div class="loading">Loading collection details...</div>';
+            
+            try {
+                const response = await fetch(`/api/collections/${collectionName}`);
+                const data = await response.json();
+                
+                if (data.success && data.collection) {
+                    const collection = data.collection;
+                    
+                    modalBody.innerHTML = `
+                        <div style="margin-bottom: 20px;">
+                            <h3 style="color: #667eea; margin-bottom: 10px;">Collection Information</h3>
+                            <div style="background: #f7f7f7; padding: 15px; border-radius: 8px;">
+                                <div style="margin-bottom: 8px;"><strong>Name:</strong> ${collection.name}</div>
+                                <div style="margin-bottom: 8px;"><strong>Total Documents:</strong> ${collection.totalDocuments}</div>
+                                <div><strong>Sample Documents:</strong> ${collection.sampleDocuments.length} loaded</div>
+                            </div>
+                        </div>
+                        
+                        <div style="margin-bottom: 15px;">
+                            <h3 style="color: #667eea; margin-bottom: 10px;">Documents</h3>
+                        </div>
+                        
+                        ${collection.sampleDocuments && collection.sampleDocuments.length > 0 ? 
+                            collection.sampleDocuments.map((doc, index) => {
+                                const docId = `modal-doc-${collectionName}-${index}`;
+                                const previewLength = 300;
+                                const needsExpand = doc.content && doc.content.length > previewLength;
+                                const preview = needsExpand ? doc.content.substring(0, previewLength) : doc.content;
+                                
+                                return `
+                                <div class="document-item">
+                                    <div class="document-title">Document ${index + 1}</div>
+                                    <div class="document-meta">
+                                        ${doc.id ? `<span><strong>ID:</strong> ${doc.id}</span>` : ''}
+                                        ${doc.metadata.title ? `<span><strong>Title:</strong> ${doc.metadata.title}</span>` : ''}
+                                        ${doc.metadata.source ? `<span><strong>Source:</strong> ${doc.metadata.source}</span>` : ''}
+                                        ${doc.metadata.type ? `<span><strong>Type:</strong> ${doc.metadata.type}</span>` : ''}
+                                        ${doc.metadata.project ? `<span><strong>Project:</strong> ${doc.metadata.project}</span>` : ''}
+                                    </div>
+                                    <div class="document-content">
+                                        <pre id="${docId}-preview" style="white-space: pre-wrap; word-wrap: break-word; margin: 0; font-family: 'Courier New', monospace; font-size: 0.9em;">
+${preview}${needsExpand ? '...' : ''}
+                                        </pre>
+                                        ${needsExpand ? `
+                                            <pre id="${docId}-full" style="display: none; white-space: pre-wrap; word-wrap: break-word; margin: 0; font-family: 'Courier New', monospace; font-size: 0.9em;">
+${doc.content}
+                                            </pre>
+                                            <button 
+                                                class="btn" 
+                                                style="margin-top: 10px; padding: 8px 16px; font-size: 0.9em;"
+                                                onclick="toggleDocContent('${docId}')"
+                                                id="${docId}-btn"
+                                            >
+                                                Show More
+                                            </button>
+                                        ` : ''}
+                                    </div>
+                                </div>
+                                `;
+                            }).join('') : '<div class="error">No documents available</div>'}
+                    `;
+                } else if (data.error) {
+                    modalBody.innerHTML = `<div class="error">Error: ${data.error}</div>`;
+                } else {
+                    modalBody.innerHTML = '<div class="error">No documents found</div>';
+                }
+            } catch (error) {
+                console.error('Error loading collection details:', error);
+                modalBody.innerHTML = `<div class="error">Error loading details: ${error.message}</div>`;
+            }
+        }
+        
+        // Close modal
+        function closeModal() {
+            const modal = document.getElementById('collectionModal');
+            modal.style.display = 'none';
+        }
+        
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('collectionModal');
+            if (event.target === modal) {
+                modal.style.display = 'none';
+            }
+        }
+        
+        // Toggle document content (show more/less)
+        function toggleDocContent(docId) {
+            const previewDiv = document.getElementById(`${docId}-preview`);
+            const fullDiv = document.getElementById(`${docId}-full`);
+            const btn = document.getElementById(`${docId}-btn`);
+            
+            if (fullDiv.style.display === 'none') {
+                // Show full content
+                previewDiv.style.display = 'none';
+                fullDiv.style.display = 'block';
+                btn.textContent = 'Show Less';
+            } else {
+                // Show preview
+                previewDiv.style.display = 'block';
+                fullDiv.style.display = 'none';
+                btn.textContent = 'Show More';
+            }
+        }
+        
+        // Load guidelines
+        function loadGuidelines() {
+            const guidelines = [
+                { title: 'CSS Modules', path: '/guidelines/default/styling/css-modules.md' },
+                { title: 'Naming Conventions', path: '/guidelines/default/styling/naming.md' },
+                { title: 'Atomic Design', path: '/guidelines/default/components/atomic.md' },
+                { title: 'Performance', path: '/guidelines/default/best-practices/performance.md' }
+            ];
+            
+            const guidelinesList = document.getElementById('guidelinesList');
+            guidelinesList.innerHTML = guidelines.map(g => `
+                <div class="guideline-item">
+                    <div class="guideline-title">${g.title}</div>
+                    <div class="guideline-path">${g.path}</div>
+                </div>
+            `).join('');
+        }
+        
+        // Test search
+        async function testSearch() {
+            const query = document.getElementById('searchQuery').value;
+            const results = document.getElementById('searchResults');
+            
+            if (!query) {
+                results.innerHTML = '<div class="error">Please enter a search query</div>';
+                return;
+            }
+            
+            results.innerHTML = '<div class="loading">Searching...</div>';
+            
+            try {
+                // 실제 API 호출
+                const response = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
+                const data = await response.json();
+                
+                if (data.success && data.results && data.results.length > 0) {
+                    results.innerHTML = data.results.map((result, index) => `
+                        <div class="result-item">
+                            <div class="result-score">Score: ${result.score}%</div>
+                            <div class="result-content">${result.content}</div>
+                            <div class="result-metadata">
+                                Source: ${result.metadata.source || 'unknown'} | 
+                                Type: ${result.metadata.type || 'general'} |
+                                Project: ${result.metadata.project || 'default'}
+                            </div>
+                        </div>
+                    `).join('');
+                } else if (data.error) {
+                    results.innerHTML = `<div class="error">Error: ${data.error}</div>`;
+                } else {
+                    results.innerHTML = '<div class="error">No results found</div>';
+                }
+            } catch (error) {
+                results.innerHTML = `<div class="error">Search failed: ${error.message}</div>`;
+            }
+        }
+        
+        // Test MCP tools
+        function testTool(toolName) {
+            const results = document.getElementById('toolResults');
+            results.innerHTML = `<div class="loading">Testing ${toolName}...</div>`;
+            
+            // Simulate tool response
+            setTimeout(() => {
+                const responses = {
+                    'get_styling_guide': 'Styling guidelines loaded: CSS Modules, Naming Conventions, Component Structure',
+                    'get_component_template': 'Component template generated: Modal, Form, Page templates available',
+                    'validate_code_style': 'Code validation complete: 3 violations found, 2 suggestions',
+                    'index_guidelines': 'Guidelines indexed: 4 documents processed successfully'
+                };
+                
+                results.innerHTML = `
+                    <div class="result-item">
+                        <div style="color: #667eea; font-weight: bold;">✅ ${toolName}</div>
+                        <div style="margin-top: 8px;">${responses[toolName]}</div>
+                    </div>
+                `;
+            }, 800);
+        }
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            checkChromaStatus();
+            loadGuidelines();
+            
+            // Check API key
+            if (localStorage.getItem('openai_api_configured')) {
+                document.getElementById('apiStatus').className = 'status-dot online';
+                document.getElementById('apiStatusText').textContent = 'Configured';
+            }
+        });
+        
+        // Auto-refresh status every 10 seconds
+        setInterval(checkChromaStatus, 10000);
+    </script>
+    
+    <!-- Collections 모달 -->
+    <div id="collectionModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title" id="modalTitle">Collection Details</h2>
+                <button class="close" onclick="closeModal()">&times;</button>
+            </div>
+            <div class="modal-body" id="modalBody">
+                <div class="loading">Loading collection details...</div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

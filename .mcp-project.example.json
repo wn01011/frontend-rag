@@ -1,0 +1,33 @@
+{
+  "id": "example-project-001",
+  "name": "Example React Project",
+  "version": "1.0.0",
+  "vectorDbCollection": "example_project_collection",
+  "priority": 1.5,
+  "overrides": {
+    "styling": "css-modules",
+    "componentStructure": "atomic",
+    "namingConvention": "PascalCase"
+  },
+  "rules": {
+    "enforceStrict": true,
+    "allowExceptions": ["third-party-components"],
+    "customRules": [
+      {
+        "name": "no-inline-styles",
+        "pattern": "style={{",
+        "message": "Inline styles are not allowed. Use CSS modules instead."
+      },
+      {
+        "name": "component-folder-structure",
+        "pattern": "^components/(?!atoms|molecules|organisms|templates|pages)",
+        "message": "Components must be organized in atomic design folders"
+      }
+    ]
+  },
+  "guidelines": {
+    "path": "./.mcp-guidelines",
+    "autoIndex": true,
+    "updateFrequency": "on-save"
+  }
+}
