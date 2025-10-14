@@ -1,29 +1,20 @@
-import OpenAI from 'openai';
+import { DefaultEmbeddingFunction } from 'chromadb';
 import { logger } from '../utils/logger.js';
 
 export class EmbeddingService {
-  private openai: OpenAI;
-  private model: string;
+  private embedder: DefaultEmbeddingFunction;
 
   constructor() {
-    const apiKey = process.env.OPENAI_API_KEY;
-    
-    if (!apiKey) {
-      throw new Error('OPENAI_API_KEY is required for embeddings');
-    }
-    
-    this.openai = new OpenAI({ apiKey });
-    this.model = process.env.EMBEDDING_MODEL || 'text-embedding-3-small';
+    // ChromaDB의 기본 임베딩 함수 사용 (all-MiniLM-L6-v2 모델)
+    // OpenAI API 키가 필요 없음
+    this.embedder = new DefaultEmbeddingFunction();
+    logger.info('Using ChromaDB default embeddings (all-MiniLM-L6-v2)');
   }
 
   async generateEmbedding(text: string): Promise<number[]> {
     try {
-      const response = await this.openai.embeddings.create({
-        model: this.model,
-        input: text,
-      });
-      
-      return response.data[0].embedding;
+      const embeddings = await this.embedder.generate([text]);
+      return embeddings[0];
     } catch (error) {
       logger.error('Failed to generate embedding:', error);
       throw new Error('Embedding generation failed');
@@ -32,12 +23,7 @@ export class EmbeddingService {
 
   async generateBatchEmbeddings(texts: string[]): Promise<number[][]> {
     try {
-      const response = await this.openai.embeddings.create({
-        model: this.model,
-        input: texts,
-      });
-      
-      return response.data.map(d => d.embedding);
+      return await this.embedder.generate(texts);
     } catch (error) {
       logger.error('Failed to generate batch embeddings:', error);
       throw new Error('Batch embedding generation failed');
@@ -45,10 +31,7 @@ export class EmbeddingService {
   }
 
   getEmbeddingFunction() {
-    return {
-      generate: async (texts: string[]): Promise<number[][]> => {
-        return this.generateBatchEmbeddings(texts);
-      },
-    };
+    // ChromaDB에서 직접 사용할 수 있는 임베딩 함수 반환
+    return this.embedder;
   }
 }
