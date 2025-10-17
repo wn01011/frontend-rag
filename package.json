@@ -1,9 +1,25 @@
 {
   "name": "mcp-frontend-rag",
   "version": "1.0.0",
-  "description": "MCP-based RAG server for frontend development guidelines",
+  "description": "MCP-based RAG server for frontend development guidelines with ChromaDB",
   "main": "dist/index.js",
-  "type": "commonjs",
+  "type": "module",
+  "bin": {
+    "mcp-frontend-rag": "./dist/index.js"
+  },
+  "files": [
+    "dist",
+    "guidelines",
+    "projects/default",
+    "projects/registry.json",
+    "server.js",
+    "dashboard.html",
+    "docker-compose.yml",
+    "setup.sh",
+    "start-chromadb.sh",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "build": "tsc",
     "dev": "tsx watch src/index.ts",
@@ -11,17 +27,33 @@
     "lint": "eslint src --ext .ts",
     "format": "prettier --write \"src/**/*.ts\"",
     "index": "tsx src/scripts/indexGuidelines.ts",
-    "test:collections": "tsx src/scripts/testCollectionManagement.ts"
+    "test:collections": "tsx src/scripts/testCollectionManagement.ts",
+    "prepublishOnly": "npm run build"
   },
   "keywords": [
     "mcp",
     "rag",
     "frontend",
     "guidelines",
-    "vector-db"
+    "vector-db",
+    "chromadb",
+    "model-context-protocol",
+    "claude",
+    "ai-assistant"
   ],
-  "author": "",
+  "author": "wn01011",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/wn01011/frontend-rag.git"
+  },
+  "bugs": {
+    "url": "https://github.com/wn01011/frontend-rag/issues"
+  },
+  "homepage": "https://github.com/wn01011/frontend-rag#readme",
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.4",
     "chromadb": "^1.10.5",
