@@ -63,7 +63,7 @@ export class RAGEngine {
     
     // Get or create project-specific collection
     const collectionName = project.vectorDbCollection || `mcp_frontend_${project.id}`;
-    const collection = await this.getOrCreateCollection(collectionName);
+    const collection = await this.ensureProjectCollection(collectionName, project);
     this.collections.set('project', collection);
     
     logger.info(`Loaded project: ${project.name} with collection: ${collectionName}`);
@@ -72,6 +72,8 @@ export class RAGEngine {
   async indexGuidelines(project: ProjectConfig, force: boolean = false): Promise<IndexResult> {
     const collectionName = project.vectorDbCollection || `mcp_frontend_${project.id}`;
     
+    let collection: Collection;
+    
     // If force, delete and recreate collection
     if (force) {
       try {
@@ -79,18 +81,42 @@ export class RAGEngine {
         logger.info(`Deleted existing collection: ${collectionName}`);
       } catch (error) {
         // Collection doesn't exist, that's fine
+        logger.debug(`No existing collection to delete: ${collectionName}`);
       }
+      
+      // Create new collection
+      collection = await this.chromaClient.createCollection({
+        name: collectionName,
+        embeddingFunction: this.embeddingService.getEmbeddingFunction(),
+      });
+      logger.info(`Created new collection: ${collectionName}`);
     } else {
       // Check if already indexed
-      const collection = this.collections.get('project');
-      if (collection) {
+      try {
+        collection = await this.chromaClient.getCollection({
+          name: collectionName,
+          embeddingFunction: this.embeddingService.getEmbeddingFunction(),
+        });
+        
         const count = await collection.count();
         if (count > 0) {
-          logger.info(`Collection ${collectionName} already has ${count} documents`);
+          logger.info(`Collection ${collectionName} already has ${count} documents (use force=true to re-index)`);
           return { documentsIndexed: count, collectionName };
         }
+        
+        logger.info(`Collection ${collectionName} exists but is empty, indexing...`);
+      } catch (error) {
+        // Collection doesn't exist, create it
+        logger.info(`Collection ${collectionName} not found, creating...`);
+        collection = await this.chromaClient.createCollection({
+          name: collectionName,
+          embeddingFunction: this.embeddingService.getEmbeddingFunction(),
+        });
       }
     }
+    
+    // Update collections map
+    this.collections.set('project', collection);
     
     // Load documents from project guidelines
     const documents = await this.documentLoader.loadProjectGuidelines(project);
@@ -99,9 +125,6 @@ export class RAGEngine {
       logger.warn(`No documents found for project: ${project.name}`);
       return { documentsIndexed: 0, collectionName };
     }
-    
-    // Get or create collection
-    const collection = await this.getOrCreateCollection(collectionName);
     
     // Prepare documents for indexing
     const ids: string[] = [];
@@ -264,7 +287,129 @@ export class RAGEngine {
     }
   }
 
+  /**
+   * Ensure project collection exists and has data indexed
+   * If collection doesn't exist, creates it
+   * If collection exists but is empty, auto-indexes project guidelines
+   */
+  private async ensureProjectCollection(collectionName: string, project: ProjectConfig): Promise<Collection> {
+    let collection: Collection;
+    let isNewCollection = false;
+
+    try {
+      // Try to get existing collection
+      collection = await this.chromaClient.getCollection({
+        name: collectionName,
+        embeddingFunction: this.embeddingService.getEmbeddingFunction(),
+      });
+      logger.info(`Found existing collection: ${collectionName}`);
+    } catch (error) {
+      // Collection doesn't exist, create it
+      logger.info(`Creating new collection: ${collectionName}`);
+      collection = await this.chromaClient.createCollection({
+        name: collectionName,
+        embeddingFunction: this.embeddingService.getEmbeddingFunction(),
+      });
+      isNewCollection = true;
+    }
+
+    // Check if collection has data
+    const count = await collection.count();
+    
+    if (count === 0) {
+      logger.info(`Collection ${collectionName} is empty, auto-indexing project guidelines...`);
+      
+      try {
+        // Load and index project guidelines
+        const documents = await this.documentLoader.loadProjectGuidelines(project);
+        
+        if (documents.length > 0) {
+          // Prepare documents for indexing
+          const ids: string[] = [];
+          const metadatas: Record<string, any>[] = [];
+          const contents: string[] = [];
+          
+          for (const doc of documents) {
+            ids.push(doc.id);
+            contents.push(doc.content);
+            metadatas.push(doc.metadata);
+          }
+          
+          // Add to collection
+          await collection.add({
+            ids,
+            metadatas,
+            documents: contents,
+          });
+          
+          logger.info(`Auto-indexed ${documents.length} documents for project: ${project.name}`);
+        } else {
+          logger.warn(`No guideline documents found for project: ${project.name}`);
+        }
+      } catch (indexError) {
+        logger.error(`Failed to auto-index project guidelines:`, indexError);
+        // Continue even if indexing fails - collection is still usable
+      }
+    } else {
+      logger.info(`Collection ${collectionName} has ${count} existing documents`);
+    }
+
+    return collection;
+  }
+
   getCurrentProject(): ProjectConfig | null {
     return this.currentProject;
+  }
+
+  /**
+   * List all collections in ChromaDB
+   */
+  async listAllCollections(): Promise<Array<{ name: string; count: number }>> {
+    try {
+      const collections = await this.chromaClient.listCollections();
+      const result = [];
+
+      for (const col of collections) {
+        const collectionName = typeof col === 'string' ? col : (col as any).name;
+        const collection = await this.chromaClient.getCollection({
+          name: collectionName,
+          embeddingFunction: this.embeddingService.getEmbeddingFunction(),
+        });
+        const count = await collection.count();
+        result.push({ name: collectionName, count });
+      }
+
+      return result;
+    } catch (error) {
+      logger.error('Failed to list collections:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Get information about the current project's collection
+   */
+  async getCollectionInfo(): Promise<{ name: string; count: number }> {
+    const projectCollection = this.collections.get('project');
+    
+    if (!projectCollection) {
+      throw new Error('No project collection loaded');
+    }
+
+    const count = await projectCollection.count();
+    const collectionName = this.currentProject?.vectorDbCollection || 
+                          `mcp_frontend_${this.currentProject?.id}`;
+
+    return {
+      name: collectionName,
+      count,
+    };
+  }
+
+  /**
+   * Get the ChromaDB client (for advanced operations)
+   */
+  getChromaClient(): ChromaClient {
+    return this.chromaClient;
   }
 }

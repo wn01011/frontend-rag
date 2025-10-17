@@ -6,7 +6,6 @@ export class EmbeddingService {
 
   constructor() {
     // ChromaDB의 기본 임베딩 함수 사용 (all-MiniLM-L6-v2 모델)
-    // OpenAI API 키가 필요 없음
     this.embedder = new DefaultEmbeddingFunction();
     logger.info('Using ChromaDB default embeddings (all-MiniLM-L6-v2)');
   }

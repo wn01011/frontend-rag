@@ -1,12 +1,12 @@
 import { logger } from '../utils/logger.js';
 
-// OpenAI 없이 작동하는 간단한 RAG 엔진
+// Simple RAG engine using keyword-based search
 export class SimpleRAGEngine {
   private documents: Map<string, any> = new Map();
   private projectDocuments: Map<string, any> = new Map();
   
   async initialize() {
-    logger.info('SimpleRAG Engine initialized (No OpenAI required)');
+    logger.info('SimpleRAG Engine initialized');
   }
   
   async addDocument(id: string, content: string, metadata: any, isProject: boolean = false) {
