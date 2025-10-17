@@ -11,30 +11,10 @@ export class ProjectDetector {
   async detectCurrentProject(startPath?: string): Promise<ProjectConfig | null> {
     const searchPath = startPath || process.cwd();
     
-    try {
-      // Look for .mcp-project.json in current and parent directories
-      let currentPath = searchPath;
-      const root = '/';
-      
-      while (currentPath !== root) {
-        const configPath = join(currentPath, '.mcp-project.json');
-        
-        if (existsSync(configPath)) {
-          logger.info(`Found project config at: ${configPath}`);
-          return await this.loadProject(currentPath);
-        }
-        
-        const parent = dirname(currentPath);
-        if (parent === currentPath) break;
-        currentPath = parent;
-      }
-      
-      logger.info('No project configuration found, using default settings');
-      return null;
-    } catch (error) {
-      logger.error('Error detecting project:', error);
-      return null;
-    }
+    // Simply return null - let the caller handle project loading
+    // No need to search for .mcp-project.json files
+    logger.info('Project detection: use switch_project to load a specific project');
+    return null;
   }
 
   async loadProject(projectPath: string): Promise<ProjectConfig> {
@@ -43,57 +23,24 @@ export class ProjectDetector {
       return this.projectCache.get(projectPath)!;
     }
     
-    const configPath = join(projectPath, '.mcp-project.json');
+    // Always create config from project path, no file needed
+    const projectName = projectPath.split('/').pop() || 'unnamed-project';
+    const projectId = projectName.toLowerCase().replace(/[^a-z0-9-]/g, '-');
     
-    try {
-      // Check if config file exists
-      if (!existsSync(configPath)) {
-        // Create default config for the project
-        const projectName = projectPath.split('/').pop() || 'unnamed-project';
-        const defaultConfig: ProjectConfig = {
-          ...defaultProjectConfig,
-          id: `project-${Date.now()}`,
-          name: projectName,
-          version: '1.0.0',
-        } as ProjectConfig;
-        
-        this.currentProject = defaultConfig;
-        this.projectCache.set(projectPath, defaultConfig);
-        return defaultConfig;
-      }
-      
-      // Read and parse config file
-      const configContent = await readFile(configPath, 'utf-8');
-      const rawConfig = JSON.parse(configContent);
-      
-      // Validate and merge with defaults
-      const config = ProjectConfigSchema.parse({
-        ...defaultProjectConfig,
-        ...rawConfig,
-        rootPath: projectPath, // Set the project root path
-      });
-      
-      // Store in cache
-      this.projectCache.set(projectPath, config);
-      this.currentProject = config;
-      
-      logger.info(`Loaded project: ${config.name} (${config.id})`);
-      return config;
-    } catch (error) {
-      logger.error(`Failed to load project config from ${configPath}:`, error);
-      
-      // Return default config on error
-      const projectName = projectPath.split('/').pop() || 'unnamed-project';
-      const fallbackConfig: ProjectConfig = {
-        ...defaultProjectConfig,
-        id: `project-${Date.now()}`,
-        name: projectName,
-        version: '1.0.0',
-      } as ProjectConfig;
-      
-      this.projectCache.set(projectPath, fallbackConfig);
-      return fallbackConfig;
-    }
+    const config: ProjectConfig = {
+      ...defaultProjectConfig,
+      id: projectId,
+      name: projectName,
+      version: '1.0.0',
+      rootPath: projectPath,
+    } as ProjectConfig;
+    
+    // Store in cache
+    this.projectCache.set(projectPath, config);
+    this.currentProject = config;
+    
+    logger.info(`Loaded project: ${config.name} (${config.id})`);
+    return config;
   }
 
   async createProjectConfig(projectPath: string, config: Partial<ProjectConfig>): Promise<ProjectConfig> {

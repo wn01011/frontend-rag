@@ -5,6 +5,7 @@ import { glob } from 'glob';
 import matter from 'gray-matter';
 import { v4 as uuidv4 } from 'uuid';
 import { ProjectConfig } from './config.js';
+import { ProjectRegistry } from './registry.js';
 import { logger } from '../utils/logger.js';
 
 export interface Document {
@@ -23,22 +24,46 @@ export interface Document {
 
 export class DocumentLoader {
   private supportedExtensions = ['.md', '.mdx', '.txt', '.json'];
+  private registry: ProjectRegistry;
+
+  constructor() {
+    this.registry = new ProjectRegistry();
+  }
 
   async loadProjectGuidelines(project: ProjectConfig): Promise<Document[]> {
     const documents: Document[] = [];
-    const guidelinePath = project.guidelines?.path || './.mcp-guidelines';
-    const projectPath = project.rootPath || process.cwd();
-    const fullPath = join(projectPath, guidelinePath);
     
     try {
+      // Try to get project from registry first
+      let guidelinesPath: string;
+      
+      if (project.rootPath) {
+        const registryEntry = await this.registry.getProjectByPath(project.rootPath);
+        if (registryEntry) {
+          // Use centralized guidelines path
+          guidelinesPath = registryEntry.guidelinesPath;
+          logger.info(`Loading guidelines from registry: ${guidelinesPath}`);
+        } else {
+          // Fallback to local .mcp-guidelines
+          const localPath = project.guidelines?.path || './.mcp-guidelines';
+          guidelinesPath = join(project.rootPath, localPath);
+          logger.warn(`Project not in registry, using local path: ${guidelinesPath}`);
+        }
+      } else {
+        // Old behavior for backward compatibility
+        const localPath = project.guidelines?.path || './.mcp-guidelines';
+        guidelinesPath = join(process.cwd(), localPath);
+        logger.warn(`No rootPath in project config, using: ${guidelinesPath}`);
+      }
+      
       // Check if guidelines directory exists
-      if (!existsSync(fullPath)) {
-        logger.warn(`Guidelines directory not found: ${fullPath}`);
+      if (!existsSync(guidelinesPath)) {
+        logger.warn(`Guidelines directory not found: ${guidelinesPath}`);
         return [];
       }
       
       // Load all markdown and text files
-      const files = await this.findGuidelineFiles(fullPath);
+      const files = await this.findGuidelineFiles(guidelinesPath);
       
       for (const file of files) {
         const doc = await this.loadDocument(file, project);
@@ -47,7 +72,7 @@ export class DocumentLoader {
         }
       }
       
-      logger.info(`Loaded ${documents.length} documents from ${fullPath}`);
+      logger.info(`Loaded ${documents.length} documents from ${guidelinesPath}`);
       return documents;
     } catch (error) {
       logger.error('Failed to load project guidelines:', error);

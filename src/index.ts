@@ -6,18 +6,35 @@ import {
   ListToolsRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js';
 import dotenv from 'dotenv';
-import { join } from 'path';
 import { RAGEngine } from './rag/engine.js';
 import { ProjectDetector } from './project/detector.js';
 import { getStylingGuideTool } from './tools/styling.js';
 import { getComponentTemplateTool } from './tools/template.js';
 import { validateCodeStyleTool } from './tools/validator.js';
+import { openDashboardTool } from './tools/dashboard.js';
+import {
+  createProjectCollectionTool,
+  updateProjectGuidelinesTool,
+  listProjectCollectionsTool,
+  getProjectInfoTool,
+} from './tools/collection.js';
+import {
+  registerProjectTool,
+  addGuidelineTool,
+  listRegisteredProjectsTool,
+  importGuidelinesTool,
+  exportGuidelinesTool,
+  migrateProjectTool,
+} from './tools/registry.js';
 import { logger } from './utils/logger.js';
+import { getDataDir, getAllPaths } from './config/paths.js';
 
-// Load environment variables from the project root
-// Use PROJECT_ROOT env var if available, otherwise use hardcoded path
-const projectRoot = process.env.PROJECT_ROOT || '/Users/naron/Desktop/Personal/frontend-rag';
-dotenv.config({ path: join(projectRoot, '.env') });
+// Load environment variables
+dotenv.config();
+
+// Log data directory paths on startup
+const paths = getAllPaths();
+logger.info('Frontend RAG Data Paths:', paths);
 
 // Initialize components
 const ragEngine = new RAGEngine();
@@ -128,6 +145,75 @@ const TOOLS: Tool[] = [
       },
     },
   },
+  {
+    name: 'create_project_collection',
+    description: 'Create a new collection for a project with custom configuration',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        projectPath: {
+          type: 'string',
+          description: 'Path to the project',
+        },
+        collectionName: {
+          type: 'string',
+          description: 'Custom collection name (optional, auto-generated if not provided)',
+        },
+        force: {
+          type: 'boolean',
+          description: 'Force recreate collection if it exists',
+        },
+      },
+      required: ['projectPath'],
+    },
+  },
+  {
+    name: 'update_project_guidelines',
+    description: 'Update project guidelines by re-indexing',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        projectPath: {
+          type: 'string',
+          description: 'Path to the project (optional, uses current if not provided)',
+        },
+        files: {
+          type: 'array',
+          items: { type: 'string' },
+          description: 'Specific files to update (optional, updates all if not provided)',
+        },
+      },
+    },
+  },
+  {
+    name: 'list_project_collections',
+    description: 'List all available project collections in ChromaDB',
+    inputSchema: {
+      type: 'object',
+      properties: {},
+    },
+  },
+  {
+    name: 'get_project_info',
+    description: 'Get detailed information about the current project and its collection',
+    inputSchema: {
+      type: 'object',
+      properties: {},
+    },
+  },
+  {
+    name: 'open_dashboard',
+    description: 'Open the web dashboard in browser to view collections, search, and manage guidelines',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        port: {
+          type: 'number',
+          description: 'Port to run dashboard server (default: 3001)',
+        },
+      },
+    },
+  },
 ];
 
 // Create MCP server
@@ -138,7 +224,9 @@ const server = new Server(
   },
   {
     capabilities: {
-      tools: {},
+      tools: {
+        ...TOOLS,
+      },
     },
   }
 );
@@ -152,24 +240,8 @@ async function initializeServer() {
     await ragEngine.initialize();
     logger.info('RAG engine initialized');
     
-    // Always load the default project on startup
-    const defaultProjectPath = process.env.PROJECT_ROOT || '/Users/naron/Desktop/Personal/frontend-rag';
-    try {
-      const project = await projectDetector.loadProject(defaultProjectPath);
-      await ragEngine.loadProject(project);
-      logger.info(`Loaded default project: ${project.name}`);
-    } catch (error) {
-      logger.warn('Could not load default project:', error);
-      
-      // Fallback: Auto-detect if enabled
-      if (process.env.AUTO_DETECT === 'true') {
-        const project = await projectDetector.detectCurrentProject();
-        if (project) {
-          logger.info(`Auto-detected project: ${project.name}`);
-          await ragEngine.loadProject(project);
-        }
-      }
-    }
+    // No default project loading - let users switch to their projects as needed
+    logger.info('Server ready. Use switch_project to load a project.');
     
     logger.info('Server initialization complete');
   } catch (error) {
@@ -235,6 +307,39 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           ],
         };
       }
+      
+      case 'create_project_collection':
+        return await createProjectCollectionTool(ragEngine, projectDetector, args);
+      
+      case 'update_project_guidelines':
+        return await updateProjectGuidelinesTool(ragEngine, projectDetector, args);
+      
+      case 'list_project_collections':
+        return await listProjectCollectionsTool(ragEngine);
+      
+      case 'get_project_info':
+        return await getProjectInfoTool(ragEngine);
+      
+      case 'open_dashboard':
+        return await openDashboardTool(args);
+      
+      case 'register_project':
+        return await registerProjectTool(args);
+      
+      case 'add_guideline':
+        return await addGuidelineTool(args);
+      
+      case 'list_registered_projects':
+        return await listRegisteredProjectsTool();
+      
+      case 'import_guidelines':
+        return await importGuidelinesTool(args);
+      
+      case 'export_guidelines':
+        return await exportGuidelinesTool(args);
+      
+      case 'migrate_project':
+        return await migrateProjectTool(args);
       
       default:
         throw new Error(`Unknown tool: ${name}`);
