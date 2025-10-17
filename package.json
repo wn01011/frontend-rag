@@ -10,7 +10,8 @@
     "start": "node dist/index.js",
     "lint": "eslint src --ext .ts",
     "format": "prettier --write \"src/**/*.ts\"",
-    "index": "tsx src/scripts/indexGuidelines.ts"
+    "index": "tsx src/scripts/indexGuidelines.ts",
+    "test:collections": "tsx src/scripts/testCollectionManagement.ts"
   },
   "keywords": [
     "mcp",
@@ -29,11 +30,11 @@
     "express": "^5.1.0",
     "glob": "^11.0.0",
     "gray-matter": "^4.0.3",
-    "openai": "^4.78.0",
     "uuid": "^11.0.4",
     "zod": "^3.24.1"
   },
   "devDependencies": {
+    "@types/express": "^5.0.0",
     "@types/node": "^22.10.6",
     "@types/uuid": "^10.0.0",
     "@typescript-eslint/eslint-plugin": "^8.20.0",

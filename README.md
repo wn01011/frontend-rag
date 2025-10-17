@@ -7,6 +7,8 @@ A Model Context Protocol (MCP) server that provides RAG (Retrieval-Augmented Gen
 - **Project-aware Guidelines**: Automatically detects and loads project-specific configurations
 - **Semantic Search**: Uses vector embeddings to find relevant guidelines
 - **Multi-collection Support**: Manages both default and project-specific guideline collections
+- **Auto-indexing**: Automatically creates and indexes collections when switching projects
+- **Smart Collection Management**: Checks for existing collections and data before creating new ones
 - **MCP Tools**: Provides tools for styling guides, component templates, and code validation
 - **Real-time Updates**: Automatically indexes new guidelines as they're added
 
@@ -16,7 +18,6 @@ A Model Context Protocol (MCP) server that provides RAG (Retrieval-Augmented Gen
 
 - Node.js 18+ 
 - ChromaDB running locally (default: http://localhost:8000)
-- OpenAI API key for embeddings
 
 ### Setup
 
@@ -34,17 +35,20 @@ npm install
 3. Set up environment variables:
 ```bash
 cp .env.example .env
-# Edit .env and add your OPENAI_API_KEY
+# Edit .env and configure ChromaDB connection
 ```
 
 4. Start ChromaDB:
 ```bash
-# Using Docker
-docker run -p 8000:8000 chromadb/chroma
+# Using the provided script (recommended)
+./start-chromadb-persistent.sh
 
-# Or install locally
-pip install chromadb
-chroma run --host localhost --port 8000
+# Or using Docker manually
+docker run -d \
+  --name frontend-rag-chromadb \
+  -p 8000:8000 \
+  -v ~/.frontend-rag/chroma_data:/data \
+  chromadb/chroma
 ```
 
 5. Build the project:
@@ -70,9 +74,9 @@ Add to your Claude Desktop config file:
       "command": "node",
       "args": ["/path/to/mcp-frontend-rag/dist/index.js"],
       "env": {
-        "OPENAI_API_KEY": "your-api-key",
         "CHROMA_DB_HOST": "localhost",
         "CHROMA_DB_PORT": "8000",
+        "FRONTEND_RAG_DATA_DIR": "~/.frontend-rag",
         "AUTO_DETECT": "true"
       }
     }
@@ -147,15 +151,68 @@ switch_project({
 })
 ```
 
+**Note**: When switching projects, the server will:
+1. Check if a collection exists for the project
+2. Create a new collection if none exists
+3. Automatically index project guidelines if the collection is empty
+4. Use existing data if the collection already has indexed documents
+
 ### 5. index_guidelines
 Indexes or re-indexes project guidelines.
 
 ```typescript
 index_guidelines({
   projectPath: "/path/to/project",
-  force: true
+  force: true  // Set to true to force re-indexing
 })
 ```
+
+**Behavior**:
+- Without `force`: Checks if collection exists and has data, skips if already indexed
+- With `force: true`: Deletes existing collection and re-indexes from scratch
+
+### 6. open_dashboard
+Opens a web-based dashboard in your browser to visualize and interact with the RAG system.
+
+```typescript
+open_dashboard({
+  port: 3001  // Optional: default is 3001
+})
+```
+
+**Features**:
+- 🔍 Search through indexed guidelines
+- 📚 Browse all collections
+- 📊 View collection statistics  
+- 📄 Inspect document contents
+- ⚙️ View configuration
+
+**Note**: The dashboard runs on a local web server and automatically opens in your browser. The server keeps running until you close Claude or restart the MCP server.
+
+## How Collection Management Works
+
+The MCP server uses intelligent collection management:
+
+1. **First Time Project Load**:
+   - Creates a new collection for the project
+   - Automatically indexes all guideline documents
+   - Logs the number of documents indexed
+
+2. **Subsequent Project Loads**:
+   - Checks if collection exists
+   - Verifies if collection has data
+   - Uses existing data without re-indexing
+   - Logs collection status
+
+3. **Empty Collection Detection**:
+   - If collection exists but is empty
+   - Automatically triggers indexing
+   - Ensures guidelines are always available
+
+4. **Manual Re-indexing**:
+   - Use `index_guidelines` with `force: true`
+   - Useful after updating guidelines
+   - Ensures latest content is indexed
 
 ## Guidelines Structure
 
@@ -220,11 +277,15 @@ npm run build
 - Verify guidelines directory exists
 - Check file permissions
 - Ensure markdown files have proper frontmatter
+- Check ChromaDB connection
 
-### OpenAI API Issues
-- Verify API key is valid
-- Check API rate limits
-- Ensure network connectivity
+## Embedding Model
+
+This MCP server uses **ChromaDB's default embedding model** (all-MiniLM-L6-v2), which:
+- Runs locally without requiring API keys
+- Provides good quality embeddings for English text
+- Works offline once downloaded
+- Is optimized for semantic search
 
 ## License
 
