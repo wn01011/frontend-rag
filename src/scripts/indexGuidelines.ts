@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import dotenv from 'dotenv';
 import { ChromaClient } from 'chromadb';
-import { OpenAIEmbeddingFunction } from 'chromadb';
+import { DefaultEmbeddingFunction } from 'chromadb';
 import fs from 'fs/promises';
 import path from 'path';
 import { glob } from 'glob';
@@ -16,10 +16,10 @@ async function indexAllGuidelines() {
     path: 'http://localhost:8000'
   });
 
-  // 기본 임베딩 사용 (OpenAI API 키 문제로)
-  console.log('⚠️  Using default embeddings (OpenAI quota exceeded)\n');
+  // Use default embeddings
+  console.log('Using ChromaDB default embeddings (all-MiniLM-L6-v2)\n');
 
-  // 메인 가이드라인 컬렉션 생성
+  // Create main guidelines collection
   let mainCollection;
   try {
     // 기존 컬렉션 삭제

@@ -116,10 +116,8 @@ async function testChromaDB() {
     
     console.log('\n💡 Next Steps:');
     console.log('1. ✅ ChromaDB is running at http://localhost:8000');
-    console.log('2. ⚠️  You need an OpenAI API key for production embeddings');
-    console.log('3. 📝 Add your API key to the .env file:');
-    console.log('      OPENAI_API_KEY=your-api-key-here');
-    console.log('4. 🚀 Your RAG server can now store and search documents!');
+    console.log('2. 🚀 Your RAG server can now store and search documents!');
+    console.log('3. 📚 Using ChromaDB default embeddings (all-MiniLM-L6-v2)');
     
   } catch (error) {
     console.error('\n❌ Connection Error:', error);
