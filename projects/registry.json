@@ -1,0 +1,15 @@
+{
+  "version": "1.0.0",
+  "projects": {
+    "/Users/naron/Desktop/과제/Toss/toss-setup-origin": {
+      "id": "toss-bank-assignment",
+      "name": "Toss Bank Frontend Assignment",
+      "projectPath": "/Users/naron/Desktop/과제/Toss/toss-setup-origin",
+      "registered": "2025-10-17T06:36:00.000Z",
+      "lastAccessed": "2025-10-17T08:10:19.020Z",
+      "collectionName": "toss_bank_assignment",
+      "guidelinesPath": "/Users/naron/Desktop/Personal/frontend-rag/projects/toss-bank-assignment/guidelines"
+    }
+  },
+  "lastUpdated": "2025-10-17T08:10:19.020Z"
+}
