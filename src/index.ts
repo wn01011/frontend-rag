@@ -28,6 +28,33 @@ import {
 } from './tools/registry.js';
 import { logger } from './utils/logger.js';
 import { getDataDir, getAllPaths } from './config/paths.js';
+import { displayVersion, getVersion } from './version.js';
+
+// Check for CLI flags
+const args = process.argv.slice(2);
+if (args.includes('--version') || args.includes('-v')) {
+  displayVersion();
+  process.exit(0);
+}
+
+if (args.includes('--help') || args.includes('-h')) {
+  console.log(`
+mcp-frontend-rag v${getVersion()}
+
+A Model Context Protocol server for frontend development guidelines with ChromaDB.
+
+Usage:
+  mcp-frontend-rag [options]
+
+Options:
+  -v, --version    Show version information
+  -h, --help       Show this help message
+
+For more information, visit:
+https://github.com/wn01011/frontend-rag
+  `);
+  process.exit(0);
+}
 
 // Load environment variables
 dotenv.config();
@@ -35,6 +62,7 @@ dotenv.config();
 // Log data directory paths on startup
 const paths = getAllPaths();
 logger.info('Frontend RAG Data Paths:', paths);
+logger.info(`Version: ${getVersion()}`);
 
 // Initialize components
 const ragEngine = new RAGEngine();
@@ -52,6 +80,14 @@ interface Tool {
 }
 
 const TOOLS: Tool[] = [
+  {
+    name: 'get_version',
+    description: 'Get the current version of mcp-frontend-rag',
+    inputSchema: {
+      type: 'object',
+      properties: {},
+    },
+  },
   {
     name: 'get_styling_guide',
     description: 'Get styling guidelines for the current project',
@@ -220,7 +256,7 @@ const TOOLS: Tool[] = [
 const server = new Server(
   {
     name: 'mcp-frontend-rag',
-    version: '1.0.0',
+    version: getVersion(),
   },
   {
     capabilities: {
@@ -265,6 +301,16 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     logger.debug(`Tool called: ${name}`, args);
     
     switch (name) {
+      case 'get_version':
+        return {
+          content: [
+            {
+              type: 'text',
+              text: `mcp-frontend-rag v${getVersion()}\n\nA Model Context Protocol server for frontend development guidelines with ChromaDB.\n\nRepository: https://github.com/wn01011/frontend-rag`,
+            },
+          ],
+        };
+        
       case 'get_styling_guide':
         return await getStylingGuideTool(ragEngine, projectDetector, args);
         

@@ -32,16 +32,40 @@ export async function openDashboardTool(args: any) {
     // 새 서버 시작
     const app = express();
     
-    // Serve static files from project root
-    const projectRoot = join(__dirname, '..', '..');
-    app.use(express.static(projectRoot));
+    // Determine package root - works for both npm installed and local dev
+    // When npm installed: __dirname = /path/to/node_modules/mcp-frontend-rag/dist/tools
+    // When local dev: __dirname = /path/to/project/src/tools (or dist/tools after build)
+    let packageRoot: string;
+    
+    // Check if we're in node_modules (npm installed)
+    if (__dirname.includes('node_modules')) {
+      // Go up to the package root: dist/tools -> dist -> package root
+      packageRoot = join(__dirname, '..', '..');
+    } else {
+      // Local development or direct build
+      packageRoot = join(__dirname, '..', '..');
+    }
+    
+    app.use(express.static(packageRoot));
 
     // API endpoints for dashboard
     setupDashboardAPI(app);
 
-    // Serve dashboard HTML
+    // Serve dashboard HTML with better error handling
     app.get('/', (req, res) => {
-      res.sendFile(join(projectRoot, 'dashboard.html'));
+      const dashboardPath = join(packageRoot, 'dashboard.html');
+      res.sendFile(dashboardPath, (err) => {
+        if (err) {
+          logger.error('Failed to serve dashboard.html:', err);
+          res.status(500).send(`
+            <h1>Dashboard Error</h1>
+            <p>Could not find dashboard.html</p>
+            <p>Looking in: ${dashboardPath}</p>
+            <p>Package root: ${packageRoot}</p>
+            <p>__dirname: ${__dirname}</p>
+          `);
+        }
+      });
     });
 
     // Start server
