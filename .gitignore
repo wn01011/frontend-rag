@@ -1,15 +1,63 @@
+# Dependencies
 node_modules/
 dist/
+
+# Environment
 .env
 .env.local
+
+# Logs
 *.log
 logs/
+
+# OS
 .DS_Store
+
+# IDE
 .vscode/
 .idea/
 *.swp
 *.swo
 *~
+
+# Package managers
 .npm
 .yarn-integrity
 .cache/
+
+# ChromaDB data (user data)
+chroma_data/
+
+# User projects (except default example)
+projects/*
+!projects/default/
+!projects/registry.json
+
+# Temporary files
+*.bak
+*.tmp
+*~
+
+# Test and development files
+check-*.js
+check-*.txt
+add_*.txt
+dashboard-patch.js
+*.test.js
+
+# Documentation (development notes)
+CENTRALIZED_STRUCTURE.md
+CHROMADB_ONLY_APPROACH.md
+CHROMADB-GUIDE.md
+CLAUDE-MCP-SETUP.md
+COLLECTION-MANAGEMENT-IMPROVEMENT.md
+DATA_PERSISTENCE.md
+FINAL_MIGRATION_COMPLETE.md
+IMPLEMENTATION_STATUS.md
+MCP_UPDATE.md
+MIGRATION_COMPLETE.md
+new-tools.txt
+
+# Example project (optional - keep for reference)
+example-project/
+example-project.mcp-project.json

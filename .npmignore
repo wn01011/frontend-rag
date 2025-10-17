@@ -1,0 +1,53 @@
+# Test and development files
+*.test.js
+*.spec.js
+check-*.js
+check-*.txt
+add_*.txt
+dashboard-patch.js
+
+# Development documentation
+CENTRALIZED_STRUCTURE.md
+CHROMADB_ONLY_APPROACH.md
+CHROMADB-GUIDE.md
+CLAUDE-MCP-SETUP.md
+COLLECTION-MANAGEMENT-IMPROVEMENT.md
+DATA_PERSISTENCE.md
+FINAL_MIGRATION_COMPLETE.md
+IMPLEMENTATION_STATUS.md
+MCP_UPDATE.md
+MIGRATION_COMPLETE.md
+new-tools.txt
+
+# User data
+chroma_data/
+projects/*
+!projects/default/
+!projects/registry.json
+
+# Example project (users should create their own)
+example-project/
+example-project.mcp-project.json
+
+# Temporary files
+*.bak
+*.tmp
+*~
+
+# IDE and OS
+.vscode/
+.idea/
+.DS_Store
+*.swp
+*.swo
+
+# Git
+.git/
+.gitignore
+
+# CI/CD
+.github/
+
+# Logs
+logs/
+*.log
