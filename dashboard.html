@@ -118,7 +118,7 @@
             margin-top: 20px;
         }
         
-        .test-input {
+        .test-input, .test-select {
             width: 100%;
             padding: 12px;
             border: 2px solid #e5e7eb;
@@ -128,7 +128,7 @@
             transition: border-color 0.3s;
         }
         
-        .test-input:focus {
+        .test-input:focus, .test-select:focus {
             outline: none;
             border-color: #667eea;
         }
@@ -142,6 +142,7 @@
             font-size: 16px;
             cursor: pointer;
             transition: transform 0.2s, box-shadow 0.2s;
+            width: 100%;
         }
         
         .btn:hover {
@@ -159,7 +160,7 @@
             background: #f7f7f7;
             border-radius: 8px;
             min-height: 100px;
-            max-height: 300px;
+            max-height: 400px;
             overflow-y: auto;
         }
         
@@ -206,6 +207,14 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .collection-item:hover {
+            background: #e5e7eb;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
         }
         
         .collection-name {
@@ -219,30 +228,6 @@
             padding: 4px 12px;
             border-radius: 20px;
             font-size: 0.85em;
-        }
-        
-        .guideline-item {
-            padding: 10px;
-            margin-bottom: 8px;
-            background: #f7f7f7;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-        
-        .guideline-item:hover {
-            background: #e5e7eb;
-        }
-        
-        .guideline-title {
-            font-weight: 600;
-            color: #333;
-            margin-bottom: 4px;
-        }
-        
-        .guideline-path {
-            font-size: 0.85em;
-            color: #666;
         }
         
         .loading {
@@ -295,6 +280,7 @@
         .modal-title {
             font-size: 1.5em;
             font-weight: 600;
+            margin: 0;
         }
         
         .close {
@@ -358,92 +344,6 @@
             border: 1px solid #e5e7eb;
             font-family: 'Courier New', monospace;
         }
-        
-        .collection-item {
-            padding: 12px;
-            margin-bottom: 8px;
-            background: #f7f7f7;
-            border-radius: 8px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        
-        .collection-item:hover {
-            background: #e5e7eb;
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-        }
-
-        
-        /* Modal styles */
-        .modal {
-            display: none;
-            position: fixed;
-            z-index: 1000;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            overflow: auto;
-            background-color: rgba(0,0,0,0.5);
-        }
-        
-        .modal-content {
-            background-color: #fefefe;
-            margin: 2% auto;
-            padding: 0;
-            width: 90%;
-            max-width: 1200px;
-            max-height: 90vh;
-            border-radius: 15px;
-            box-shadow: 0 25px 60px rgba(0,0,0,0.3);
-            overflow: hidden;
-        }
-        
-        .modal-header {
-            padding: 20px 30px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        
-        .modal-title {
-            margin: 0;
-            font-size: 1.8em;
-            color: white;
-        }
-        
-        .modal-body {
-            padding: 30px;
-            max-height: calc(90vh - 80px);
-            overflow-y: auto;
-            background: white;
-        }
-        
-        .close {
-            color: white;
-            font-size: 32px;
-            font-weight: bold;
-            cursor: pointer;
-            background: none;
-            border: none;
-            padding: 0;
-            width: 35px;
-            height: 35px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: transform 0.2s;
-        }
-        
-        .close:hover {
-            transform: scale(1.2);
-        }
     </style>
 </head>
 <body>
@@ -456,10 +356,6 @@
                 <div class="status-item">
                     <span class="status-dot offline" id="chromaStatus"></span>
                     <span>ChromaDB: <span id="chromaStatusText">Checking...</span></span>
-                </div>
-                <div class="status-item">
-                    <span class="status-dot offline" id="apiStatus"></span>
-                    <span>OpenAI API: <span id="apiStatusText">Not configured</span></span>
                 </div>
                 <div class="status-item">
                     <span>Collections: <span id="collectionCount">0</span></span>
@@ -477,6 +373,9 @@
                     Search Test
                 </h2>
                 <div class="test-section">
+                    <select class="test-select" id="collectionSelect">
+                        <option value="">Loading collections...</option>
+                    </select>
                     <input type="text" class="test-input" id="searchQuery" placeholder="Enter search query (e.g., CSS modules best practices)">
                     <button class="btn" onclick="testSearch()">Search</button>
                     <div class="results" id="searchResults"></div>
@@ -495,16 +394,6 @@
             
             <div class="card">
                 <h2>
-                    <span>📄</span>
-                    Guidelines
-                </h2>
-                <div id="guidelinesList">
-                    <div class="loading">Loading guidelines...</div>
-                </div>
-            </div>
-            
-            <div class="card">
-                <h2>
                     <span>⚙️</span>
                     Configuration
                 </h2>
@@ -513,26 +402,10 @@
                     <div style="background: #f7f7f7; padding: 15px; border-radius: 8px; font-family: monospace; font-size: 14px;">
                         <div>CHROMA_DB_HOST: <span id="configHost">localhost</span></div>
                         <div>CHROMA_DB_PORT: <span id="configPort">8000</span></div>
-                        <div>EMBEDDING_MODEL: <span id="configModel">text-embedding-3-small</span></div>
+                        <div>EMBEDDING_MODEL: <span id="configModel">all-MiniLM-L6-v2</span></div>
                         <div>MAX_SEARCH_RESULTS: <span id="configMaxResults">5</span></div>
                     </div>
                 </div>
-            </div>
-        </div>
-        
-        <div class="card">
-            <h2>
-                <span>🧪</span>
-                Test MCP Tools
-            </h2>
-            <div class="test-section">
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin-bottom: 20px;">
-                    <button class="btn" onclick="testTool('get_styling_guide')">Test Styling Guide</button>
-                    <button class="btn" onclick="testTool('get_component_template')">Test Component Template</button>
-                    <button class="btn" onclick="testTool('validate_code_style')">Test Code Validator</button>
-                    <button class="btn" onclick="testTool('index_guidelines')">Test Index Guidelines</button>
-                </div>
-                <div class="results" id="toolResults"></div>
             </div>
         </div>
     </div>
@@ -555,15 +428,6 @@
                     document.getElementById('collectionList').innerHTML = '<li class="error">ChromaDB is not running. Start it with: docker-compose up -d</li>';
                 }
                 
-                // Update OpenAI status
-                if (status.openai === 'configured') {
-                    document.getElementById('apiStatus').className = 'status-dot online';
-                    document.getElementById('apiStatusText').textContent = 'Configured';
-                } else {
-                    document.getElementById('apiStatus').className = 'status-dot offline';
-                    document.getElementById('apiStatusText').textContent = 'Not configured';
-                }
-                
                 // Show environment info
                 if (status.env) {
                     document.getElementById('configHost').textContent = status.env.chromaHost;
@@ -584,8 +448,10 @@
                 const data = await response.json();
                 
                 const collectionList = document.getElementById('collectionList');
+                const collectionSelect = document.getElementById('collectionSelect');
                 
                 if (data.success && data.collections && data.collections.length > 0) {
+                    // Update collection list
                     collectionList.innerHTML = data.collections.map(collection => `
                         <li class="collection-item" onclick="showCollectionDetails('${collection.name}')">
                             <span class="collection-name">${collection.name}</span>
@@ -593,16 +459,24 @@
                         </li>
                     `).join('');
                     
+                    // Update collection dropdown
+                    collectionSelect.innerHTML = data.collections.map(collection => `
+                        <option value="${collection.name}">${collection.name} (${collection.totalDocuments} docs)</option>
+                    `).join('');
+                    
                     // 문서 수 업데이트
                     document.getElementById('documentCount').textContent = data.totalDocuments;
                 } else if (data.error) {
                     collectionList.innerHTML = `<li class="error">Error: ${data.error}</li>`;
+                    collectionSelect.innerHTML = '<option value="">No collections available</option>';
                 } else {
                     collectionList.innerHTML = '<li class="error">No collections found</li>';
+                    collectionSelect.innerHTML = '<option value="">No collections available</option>';
                 }
             } catch (error) {
                 console.error('Error loading collections:', error);
                 document.getElementById('collectionList').innerHTML = '<li class="error">Error loading collections</li>';
+                document.getElementById('collectionSelect').innerHTML = '<option value="">Error loading collections</option>';
             }
         }
         
@@ -721,27 +595,10 @@ ${doc.content}
             }
         }
         
-        // Load guidelines
-        function loadGuidelines() {
-            const guidelines = [
-                { title: 'CSS Modules', path: '/guidelines/default/styling/css-modules.md' },
-                { title: 'Naming Conventions', path: '/guidelines/default/styling/naming.md' },
-                { title: 'Atomic Design', path: '/guidelines/default/components/atomic.md' },
-                { title: 'Performance', path: '/guidelines/default/best-practices/performance.md' }
-            ];
-            
-            const guidelinesList = document.getElementById('guidelinesList');
-            guidelinesList.innerHTML = guidelines.map(g => `
-                <div class="guideline-item">
-                    <div class="guideline-title">${g.title}</div>
-                    <div class="guideline-path">${g.path}</div>
-                </div>
-            `).join('');
-        }
-        
         // Test search
         async function testSearch() {
             const query = document.getElementById('searchQuery').value;
+            const collectionName = document.getElementById('collectionSelect').value;
             const results = document.getElementById('searchResults');
             
             if (!query) {
@@ -749,15 +606,24 @@ ${doc.content}
                 return;
             }
             
+            if (!collectionName) {
+                results.innerHTML = '<div class="error">Please select a collection</div>';
+                return;
+            }
+            
             results.innerHTML = '<div class="loading">Searching...</div>';
             
             try {
                 // 실제 API 호출
-                const response = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
+                const response = await fetch(`/api/search?q=${encodeURIComponent(query)}&collection=${encodeURIComponent(collectionName)}`);
                 const data = await response.json();
                 
                 if (data.success && data.results && data.results.length > 0) {
-                    results.innerHTML = data.results.map((result, index) => `
+                    results.innerHTML = `
+                        <div style="margin-bottom: 10px; color: #667eea; font-weight: bold;">
+                            Found ${data.results.length} results in ${data.collection}
+                        </div>
+                    ` + data.results.map((result, index) => `
                         <div class="result-item">
                             <div class="result-score">Score: ${result.score}%</div>
                             <div class="result-content">${result.content}</div>
@@ -778,39 +644,9 @@ ${doc.content}
             }
         }
         
-        // Test MCP tools
-        function testTool(toolName) {
-            const results = document.getElementById('toolResults');
-            results.innerHTML = `<div class="loading">Testing ${toolName}...</div>`;
-            
-            // Simulate tool response
-            setTimeout(() => {
-                const responses = {
-                    'get_styling_guide': 'Styling guidelines loaded: CSS Modules, Naming Conventions, Component Structure',
-                    'get_component_template': 'Component template generated: Modal, Form, Page templates available',
-                    'validate_code_style': 'Code validation complete: 3 violations found, 2 suggestions',
-                    'index_guidelines': 'Guidelines indexed: 4 documents processed successfully'
-                };
-                
-                results.innerHTML = `
-                    <div class="result-item">
-                        <div style="color: #667eea; font-weight: bold;">✅ ${toolName}</div>
-                        <div style="margin-top: 8px;">${responses[toolName]}</div>
-                    </div>
-                `;
-            }, 800);
-        }
-        
         // Initialize
         document.addEventListener('DOMContentLoaded', () => {
             checkChromaStatus();
-            loadGuidelines();
-            
-            // Check API key
-            if (localStorage.getItem('openai_api_configured')) {
-                document.getElementById('apiStatus').className = 'status-dot online';
-                document.getElementById('apiStatusText').textContent = 'Configured';
-            }
         });
         
         // Auto-refresh status every 10 seconds

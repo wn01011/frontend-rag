@@ -14,10 +14,8 @@ app.use(express.static(__dirname));
 app.get('/api/status', async (req, res) => {
   const status = {
     chromadb: 'offline',
-    openai: 'not-configured',
     collections: 0,
     env: {
-      hasOpenAIKey: false,
       chromaHost: process.env.CHROMA_DB_HOST || 'localhost',
       chromaPort: process.env.CHROMA_DB_PORT || '8000'
     }
@@ -40,23 +38,19 @@ app.get('/api/status', async (req, res) => {
     console.log('ChromaDB module error:', error.message);
   }
   
-  if (process.env.OPENAI_API_KEY && process.env.OPENAI_API_KEY.startsWith('sk-')) {
-    status.openai = 'configured';
-    status.env.hasOpenAIKey = true;
-  }
-  
   res.json(status);
 });
 
 // API endpoint for search - ChromaDB 기본 임베딩 사용
 app.get('/api/search', async (req, res) => {
   const query = req.query.q;
+  const collectionName = req.query.collection || 'mcp_frontend_default';
   
   if (!query) {
     return res.json({ error: 'Query parameter required' });
   }
   
-  console.log(`🔍 Search query: "${query}"`);
+  console.log(`🔍 Search query: "${query}" in collection: "${collectionName}"`);
   
   try {
     const { ChromaClient, DefaultEmbeddingFunction } = require('chromadb');
@@ -69,7 +63,7 @@ app.get('/api/search', async (req, res) => {
     
     try {
       const collection = await client.getCollection({
-        name: 'mcp_frontend_default',
+        name: collectionName,
         embeddingFunction: embedder
       });
       
@@ -119,7 +113,8 @@ app.get('/api/search', async (req, res) => {
         success: true, 
         results: formattedResults,
         method: 'chromadb-embedding',
-        model: 'all-MiniLM-L6-v2'
+        model: 'all-MiniLM-L6-v2',
+        collection: collectionName
       });
     } catch (collectionError) {
       console.error('Collection error:', collectionError.message);
@@ -272,7 +267,6 @@ app.listen(PORT, () => {
 ║   Model: all-MiniLM-L6-v2 (384 dimensions)    ║
 ║                                                ║
 ║   Environment:                                ║`);
-  console.log(`║   OPENAI_API_KEY: ${process.env.OPENAI_API_KEY ? '✅ Available' : '❌ Not needed'}       ║`);
   console.log(`║   CHROMA_DB_HOST: ${process.env.CHROMA_DB_HOST || 'localhost'}              ║`);
   console.log(`║   CHROMA_DB_PORT: ${process.env.CHROMA_DB_PORT || '8000'}                  ║`);
   console.log(`║                                                ║
